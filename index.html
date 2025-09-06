@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pizzería Tonic – Tu propia app</title>
+    <meta
+      name="description"
+      content="Página de pizzas con carrito (localStorage) y panel admin para ver pedidos."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f0f11;
+        --bg-2: #151518;
+        --card: #1b1b21;
+        --text: #f5f7fb;
+        --muted: #b9c0d4;
+        --brand: #f94d2f;
+        --accent: #ffc043;
+        --radius: 16px;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 70;
+        background: rgba(15, 15, 17, 0.7);
+        backdrop-filter: saturate(140%) blur(10px);
+        border-bottom: 1px solid #222;
+      }
+      .nav-inner {
+        max-width: 1100px;
+        margin: auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1rem;
+      }
+      .brand {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
+      .brand .logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: conic-gradient(
+          from 210deg at 50% 50%,
+          var(--brand),
+          var(--accent)
+        );
+        box-shadow: var(--shadow);
+      }
+      .brand span {
+        font-size: 1.05rem;
+      }
+      .links {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+      .nav .btn {
+        background: var(--brand);
+        padding: 0.6rem 0.95rem;
+        border-radius: 999px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+      }
+      .btn.ghost {
+        background: transparent;
+        border: 1px solid #2a2a32;
+      }
+      .btn.cart {
+        background: var(--accent);
+        color: #111;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .hamb {
+        display: none;
+      }
+
+      .hero {
+        max-width: 1100px;
+        margin: 16px auto;
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        position: relative;
+      }
+      .slider {
+        position: relative;
+        height: 360px;
+      }
+      .slide {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.7s ease;
+      }
+      .slide.active {
+        opacity: 1;
+      }
+      .slide img {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+      }
+      .hero-copy {
+        position: absolute;
+        inset: auto 0 0 0;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(0, 0, 0, 0.7) 35%,
+          rgba(0, 0, 0, 0.9)
+        );
+        padding: 1.2rem;
+      }
+      .badge {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+        display: inline-block;
+        padding: 0.35rem 0.6rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        font-size: 0.8rem;
+        margin-bottom: 0.4rem;
+      }
+      .hero h1 {
+        margin: 0.2rem 0 0.4rem 0;
+        font-size: clamp(1.4rem, 3vw, 2.2rem);
+      }
+      .hero p {
+        margin: 0.2rem 0;
+        color: var(--muted);
+      }
+      .cta {
+        margin-top: 0.6rem;
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .section {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 10px;
+      }
+      .section h2 {
+        margin: 0 0 12px 0;
+        font-size: 1.6rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .card {
+        position: relative;
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--card);
+        min-height: 140px;
+      }
+      .card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(110%);
+      }
+      .card .label {
+        position: absolute;
+        inset: auto 10px 10px 10px;
+        background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.7));
+        padding: 8px 10px;
+        border-radius: 12px;
+        color: #fff;
+        font-weight: 700;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 8px 0 18px;
+      }
+      .chip {
+        border: 1px solid #2a2a32;
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .chip.active,
+      .chip:hover {
+        background: #272733;
+        border-color: #3a3a46;
+      }
+      .menu {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .item {
+        background: var(--card);
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow);
+      }
+      .item .thumb {
+        height: 160px;
+        overflow: hidden;
+      }
+      .item .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.35s ease;
+      }
+      .item:hover .thumb img {
+        transform: scale(1.05);
+      }
+      .item .info {
+        padding: 12px;
+      }
+      .tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .tag {
+        font-size: 0.75rem;
+        border: 1px solid #2c2c36;
+        border-radius: 999px;
+        padding: 0.2rem 0.5rem;
+        color: var(--muted);
+      }
+      .price-row {
+        margin-top: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .price {
+        font-weight: 800;
+        color: #fff;
+      }
+      .add {
+        background: var(--accent);
+        border: none;
+        border-radius: 10px;
+        padding: 0.4rem 0.65rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .promo {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 12px;
+      }
+      .banner {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .banner img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+      }
+      .banner .copy {
+        position: absolute;
+        inset: auto 0 0 0;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(0, 0, 0, 0.85) 55%
+        );
+        padding: 14px;
+      }
+
+      .contact {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+      }
+      form {
+        display: grid;
+        gap: 10px;
+        background: var(--card);
+        padding: 14px;
+        border-radius: 16px;
+      }
+      input,
+      textarea {
+        background: #111119;
+        border: 1px solid #2a2a32;
+        color: #fff;
+        padding: 0.7rem;
+        border-radius: 10px;
+      }
+      textarea {
+        min-height: 120px;
+      }
+
+      footer {
+        margin-top: 40px;
+        padding: 30px 10px;
+        border-top: 1px solid #222;
+        background: #0d0d10;
+      }
+      .foot {
+        max-width: 1100px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        gap: 14px;
+        color: var(--muted);
+      }
+      .tiny {
+        font-size: 0.85rem;
+        color: #8a92a7;
+      }
+
+      /* Drawer reutilizable */
+      .drawer {
+        position: fixed;
+        inset: 0 0 0 auto;
+        width: min(320px, 88vw);
+        transform: translateX(105%);
+        transition: transform 0.3s;
+        background: #111119;
+        border-left: 1px solid #2a2a32;
+        padding: 18px;
+        z-index: 80;
+      }
+      .drawer.open {
+        transform: translateX(0);
+      }
+
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .menu {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .promo {
+          grid-template-columns: 1fr;
+        }
+        .contact {
+          grid-template-columns: 1fr;
+        }
+        .slider {
+          height: 300px;
+        }
+      }
+      @media (max-width: 640px) {
+        .links {
+          display: none;
+        }
+        .hamb {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          border: 1px solid #2a2a32;
+          border-radius: 10px;
+          padding: 0.35rem 0.6rem;
+          cursor: pointer;
+        }
+        .hero {
+          margin: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" aria-label="Navegación principal">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="logo">🍕</div>
+          <span>Pizzería Tonic</span>
+        </div>
+        <div class="links">
+          <a href="#inicio">Inicio</a>
+          <a href="#categorias">Categorías</a>
+          <a href="#menu">Menú</a>
+          <a href="#promos">Promos</a>
+          <a href="#contacto">Contacto</a>
+          <a class="btn" href="#menu">Pedir ahora</a>
+          <a class="btn ghost" id="linkAdmin" href="#admin">Admin</a>
+          <button id="btnCart" class="btn cart">
+            🛒 <span id="cartCount">0</span>
+          </button>
+        </div>
+        <button
+          class="hamb"
+          id="btnHamb"
+          aria-controls="drawer"
+          aria-expanded="false"
+        >
+          ☰ Menú
+        </button>
+      </div>
+    </nav>
+
+    <!-- Drawer de navegación móvil -->
+    <aside id="drawer" class="drawer" aria-hidden="true">
+      <a href="#inicio">Inicio</a>
+      <a href="#categorias">Categorías</a>
+      <a href="#menu">Menú</a>
+      <a href="#promos">Promos</a>
+      <a href="#contacto">Contacto</a>
+      <a href="#admin">Admin</a>
+    </aside>
+
+    <!-- Drawer Carrito -->
+    <aside id="cartPanel" class="drawer" aria-hidden="true" style="right: 0">
+      <h3 style="margin-top: 0">Tu pedido</h3>
+      <div
+        id="cartItems"
+        class="tiny"
+        style="display: grid; gap: 8px; max-height: 55vh; overflow: auto"
+      ></div>
+      <div style="border-top: 1px solid #1f1f28; margin: 12px 0"></div>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <strong>Total</strong><strong id="cartTotal">Q0.00</strong>
+      </div>
+      <form id="checkoutForm" style="margin-top: 10px; display: grid; gap: 8px">
+        <input name="nombre" placeholder="Tu nombre" required />
+        <input name="telefono" placeholder="Teléfono" required />
+        <textarea
+          name="direccion"
+          placeholder="Dirección / indicaciones"
+          required
+        ></textarea>
+        <button class="btn" type="submit">Confirmar pedido</button>
+        <button class="btn ghost" type="button" id="btnVaciar">
+          Vaciar carrito
+        </button>
+        <p class="tiny" id="cartMsg" role="status"></p>
+      </form>
+    </aside>
+
+    <header id="inicio" class="hero" aria-label="Promociones destacadas">
+      <div class="slider" id="slider">
+        <figure class="slide active">
+          <img
+            src="https://img.freepik.com/vector-gratis/plantilla-pagina-destino-pizza_23-2148735759.jpg?semt=ais_incoming&w=740&q=80"
+            alt="Promoción 2x1"
+          />
+          <figcaption class="hero-copy">
+            <span class="badge">Jueves • 2x1</span>
+            <h1>Las mejores pizzas artesanales de la ciudad</h1>
+            <p>Ingredientes frescos, masa madre y horno de piedra.</p>
+            <div class="cta">
+              <a class="btn" href="#menu">Ver menú</a>
+              <a class="btn ghost" href="#promos">Ver promociones</a>
+            </div>
+          </figcaption>
+        </figure>
+        <figure class="slide">
+          <img
+            src="https://images.unsplash.com/photo-1556745753-b2904692b3cd?q=80&w=1600&auto=format&fit=crop"
+            alt="Ingredientes frescos"
+          />
+          <figcaption class="hero-copy">
+            <span class="badge">Ingredientes top</span>
+            <h1>Hecho con amor</h1>
+            <p>Tomates San Marzano, mozzarella y albahaca fresca.</p>
+          </figcaption>
+        </figure>
+        <figure class="slide">
+          <img
+            src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1600&auto=format&fit=crop"
+            alt="Bebidas"
+          />
+          <figcaption class="hero-copy">
+            <span class="badge">Happy hour</span>
+            <h1>Coctelería y cervezas</h1>
+            <p>De 5–7 pm bebidas seleccionadas.</p>
+          </figcaption>
+        </figure>
+      </div>
+    </header>
+
+    <section id="categorias" class="section">
+      <h2>Explora por categoría</h2>
+      <div class="grid">
+        <a class="card" href="#menu" data-filter="entradas"
+          ><img
+            src="https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200&auto=format&fit=crop"
+            alt="Entradas"
+          />
+          <div class="label">Entradas</div></a
+        >
+        <a class="card" href="#menu" data-filter="pizza"
+          ><img
+            src="https://media.istockphoto.com/id/1442417585/es/foto/persona-recibiendo-un-pedazo-de-pizza-de-pepperoni-con-queso.jpg?s=612x612&w=0&k=20&c=Uk4fj96OIDxE4v2S5sRRXRY_gZ899_TE6jGD-T-TysI="
+            alt="Pizzas"
+          />
+          <div class="label">Pizzas</div></a
+        >
+        <a class="card" href="#menu" data-filter="cocteles"
+          ><img
+            src="https://thumbs.dreamstime.com/b/cinco-c%C3%B3cteles-t%C3%B3nicos-de-la-ginebra-colorida-en-copas-vino-contador-barra-111478962.jpg"
+            alt="Coctelería"
+          />
+          <div class="label">Coctelería</div></a
+        >
+        <a class="card" href="#menu" data-filter="cervezas"
+          ><img
+            src="https://media.istockphoto.com/id/637049534/es/foto/surtido-de-vasos-de-cerveza-en-la-mesa.jpg?s=612x612&w=0&k=20&c=6ahzq-fQtnEr1apopxf1WnsseBACmeF6828zIgfmL4k="
+            alt="Cervezas"
+          />
+          <div class="label">Cervezas</div></a
+        >
+      </div>
+    </section>
+
+    <section id="menu" class="section">
+      <h2>Nuestro menú</h2>
+      <div class="toolbar" role="tablist" aria-label="Filtros del menú">
+        <button class="chip active" data-filter="all">Todo</button>
+        <button class="chip" data-filter="entradas">Entradas</button>
+        <button class="chip" data-filter="pizza">Pizzas</button>
+        <button class="chip" data-filter="cocteles">Cocteles</button>
+        <button class="chip" data-filter="cervezas">Cervezas</button>
+        <span class="tiny" id="resultsCount" aria-live="polite"></span>
+      </div>
+      <div class="menu" id="menuGrid" aria-live="polite"></div>
+    </section>
+
+    <section id="promos" class="section">
+      <h2>Promociones</h2>
+      <div class="promo">
+        <article class="banner">
+          <img
+            src="https://media.istockphoto.com/id/2159019626/photo/overhead-view-of-hands-taking-pizza-from-cardboard-box.jpg?s=612x612&w=0&k=20&c=VRVY8SETgkWXlq9rzp1XZCyCDRbzXJhRhnQvRtDRQAs="
+            alt="Jueves 2x1"
+          />
+          <div class="copy">
+            <h3>Jueves 2×1 en Pizzas</h3>
+            <p class="tiny">Aplica en especialidades.</p>
+          </div>
+        </article>
+        <article class="banner">
+          <img
+            src="https://images.unsplash.com/photo-1527169402691-feff5539e52c?q=80&w=1200&auto=format&fit=crop"
+            alt="Combo familiar"
+          />
+          <div class="copy">
+            <h3>Combo Familiar Q159</h3>
+            <p class="tiny">1 pizza grande + bebida 2L + palitos de ajo.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="contacto" class="section">
+      <h2>Contáctanos</h2>
+      <form id="contactForm">
+        <input required name="nombre" placeholder="Nombre" /><input
+          required
+          type="email"
+          name="email"
+          placeholder="Correo"
+        /><textarea required name="mensaje" placeholder="Mensaje"></textarea
+        ><button class="btn" type="submit">Enviar</button>
+        <p class="tiny" id="formMsg" role="status"></p>
+      </form>
+    </section>
+
+    <!-- ADMIN -->
+    <section
+      id="admin"
+      class="section"
+      aria-labelledby="t-admin"
+      style="display: none"
+    >
+      <h2 id="t-admin">Panel de administración</h2>
+      <div class="toolbar">
+        <button class="chip" id="btnExport">Exportar JSON</button>
+        <button class="chip" id="btnClearOrders">Borrar pedidos</button>
+        <span class="tiny" id="ordersInfo"></span>
+      </div>
+      <div
+        style="overflow: auto; border: 1px solid #2a2a32; border-radius: 12px"
+      >
+        <table class="tiny" style="width: 100%; border-collapse: collapse">
+          <thead>
+            <tr style="background: #121218">
+              <th
+                style="
+                  text-align: left;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                #
+              </th>
+              <th
+                style="
+                  text-align: left;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                Fecha
+              </th>
+              <th
+                style="
+                  text-align: left;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                Cliente
+              </th>
+              <th
+                style="
+                  text-align: left;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                Teléfono
+              </th>
+              <th
+                style="
+                  text-align: left;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                Dirección
+              </th>
+              <th
+                style="
+                  text-align: left;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                Items
+              </th>
+              <th
+                style="
+                  text-align: right;
+                  padding: 8px;
+                  border-bottom: 1px solid #1f1f28;
+                "
+              >
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <div class="foot">
+        <div>
+          <div class="brand" style="margin-bottom: 0.6rem">
+            <div class="logo">🍕</div>
+            <span>Pizzería Tonic</span>
+          </div>
+          <p class="tiny">
+            © <span id="yy"></span> Tonic Foods, S.A. Todos los derechos
+            reservados.
+          </p>
+        </div>
+        <div>
+          <strong>Horario</strong>
+          <p class="tiny">
+            L–J 11:00–22:00<br />V–S 11:00–23:30<br />D 12:00–21:00
+          </p>
+        </div>
+        <div>
+          <strong>Dirección</strong>
+          <p class="tiny">
+            Av. Italia 123, Zona Centro, Guatemala<br />Tel. (502) 5555‑5555
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // ===== Datos del menú =====
+      const DATA = [
+        {
+          id: 1,
+          type: "entradas",
+          name: "Bruschetta clásica",
+          price: 35,
+          img: "https://www.defer.cl/218-large_default/bruschetta-clasica-napolitana-x20.jpg",
+          tags: ["vegetariano", "compartir"],
+        },
+        {
+          id: 2,
+          type: "entradas",
+          name: "Palitos de ajo",
+          price: 29,
+          img: "https://www.labuonapizza.cl/wp-content/uploads/2022/07/labuonapizza-palodeajo-01.jpg",
+          tags: ["horno de piedra"],
+        },
+        {
+          id: 3,
+          type: "pizza",
+          name: "Margarita",
+          price: 65,
+          img: "https://media.istockphoto.com/id/1469159254/es/foto/c%C3%B3ctel-margarita-con-riim-de-hielo-lima-y-sal.jpg?s=612x612&w=0&k=20&c=vW4PdkDvdAHxXy0fe510Ds875e_UOi09qMp2Zp89nQ0=",
+          tags: ["clásica", "vegetariano"],
+        },
+        {
+          id: 4,
+          type: "pizza",
+          name: "Pepperoni",
+          price: 72,
+          img: "https://media.istockphoto.com/id/521403691/es/foto/casera-con-opciones-fr%C3%ADas-y-calientes-y-pizza-de-chorizo.jpg?s=612x612&w=0&k=20&c=e65G7OWoYUXnSWFDRKgt4Ga82vw76RaLUQ1AGvsutJw=",
+          tags: ["favorita"],
+        },
+        {
+          id: 5,
+          type: "pizza",
+          name: "Cuatro quesos",
+          price: 78,
+          img: "https://media.istockphoto.com/id/1744442094/es/foto/pizza-quattro-fromaggi-sobre-una-tabla-de-madera-pizza-de-cuatro-quesos-o-pizza-quattro.jpg?s=612x612&w=0&k=20&c=9ja-y6sGsLKxORGUEraShO2cfU9ZBSsliNPQkdLRk8g=",
+          tags: ["queso", "cremosa"],
+        },
+        {
+          id: 6,
+          type: "pizza",
+          name: "Hawaiana",
+          price: 74,
+          img: "https://media.istockphoto.com/id/1349383878/es/foto/pizza-hawaiana-con-jam%C3%B3n-y-pi%C3%B1a.jpg?s=612x612&w=0&k=20&c=oc3y6BPWj4hdd7RDi-Sys-dVdXueaomNYOZX9qunLqY=",
+          tags: ["dulce-salado"],
+        },
+        {
+          id: 7,
+          type: "cocteles",
+          name: "Aperol Spritz",
+          price: 45,
+          img: "https://img.freepik.com/fotos-premium/aperitivo-italiano-tradicional-nueces-queso-bebida-aperol-spritz_536604-4921.jpg",
+          tags: ["refrescante"],
+        },
+        {
+          id: 8,
+          type: "cocteles",
+          name: "Mojito",
+          price: 42,
+          img: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200&auto=format&fit=crop",
+          tags: ["menta", "limón"],
+        },
+        {
+          id: 9,
+          type: "cervezas",
+          name: "Lager nacional",
+          price: 20,
+          img: "https://images.unsplash.com/photo-1527169402691-feff5539e52c?q=80&w=1200&auto=format&fit=crop",
+          tags: ["fría"],
+        },
+        {
+          id: 10,
+          type: "cervezas",
+          name: "IPA artesanal",
+          price: 32,
+          img: "https://media.istockphoto.com/id/534451532/es/foto/antig%C3%BCedad-de-quesos-artesanales.jpg?s=612x612&w=0&k=20&c=dvjD07G4Pj0h8-9mLJ_FeM5uY6tCjGJuTSqkl4_4c6s=",
+          tags: ["amarga"],
+        },
+      ];
+
+      const elGrid = document.getElementById("menuGrid");
+      const elChips = document.querySelectorAll(".chip");
+      const elCount = document.getElementById("resultsCount");
+
+      // ===== Carrito & pedidos (localStorage) =====
+      const LS_CART = "pt_cart";
+      const LS_ORDERS = "pt_orders";
+      const btnCart = document.getElementById("btnCart");
+      const cartPanel = document.getElementById("cartPanel");
+      const cartItems = document.getElementById("cartItems");
+      const cartTotal = document.getElementById("cartTotal");
+      const cartCount = document.getElementById("cartCount");
+
+      const $ = (s) => document.querySelector(s);
+
+      function loadCart() {
+        return JSON.parse(localStorage.getItem(LS_CART) || "[]");
+      }
+      function saveCart(items) {
+        localStorage.setItem(LS_CART, JSON.stringify(items));
+        updateCartUI();
+      }
+      function addToCart(item) {
+        const c = loadCart();
+        const f = c.find((x) => x.id === item.id);
+        if (f) {
+          f.qty++;
+        } else {
+          c.push({ ...item, qty: 1 });
+        }
+        saveCart(c);
+        openCart();
+      }
+      function removeFromCart(id) {
+        let c = loadCart().filter((x) => x.id !== id);
+        saveCart(c);
+      }
+      function changeQty(id, delta) {
+        let c = loadCart();
+        const it = c.find((x) => x.id === id);
+        if (!it) return;
+        it.qty += delta;
+        if (it.qty <= 0) c = c.filter((x) => x.id !== id);
+        saveCart(c);
+      }
+      function cartSum(c) {
+        return c.reduce((s, it) => s + it.price * it.qty, 0);
+      }
+
+      function updateCartUI() {
+        const c = loadCart();
+        cartItems.innerHTML = c.length ? "" : "<em>No hay productos.</em>";
+        c.forEach((it) => {
+          const row = document.createElement("div");
+          row.innerHTML = `
+        <div style="display:flex;gap:8px;align-items:center">
+          <img src="${it.img}" alt="${
+            it.name
+          }" style="width:48px;height:48px;object-fit:cover;border-radius:8px">
+          <div style="flex:1">
+            <div style="font-weight:600">${it.name}</div>
+            <div class="tiny">${it.qty} × Q${it.price.toFixed(2)}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="chip" onclick="changeQty(${it.id},-1)">−</button>
+            <button class="chip" onclick="changeQty(${it.id},+1)">+</button>
+            <button class="chip" onclick="removeFromCart(${it.id})">🗑</button>
+          </div>
+        </div>`;
+          cartItems.appendChild(row);
+        });
+        cartTotal.textContent = "Q" + cartSum(c).toFixed(2);
+        cartCount.textContent = c.reduce((s, it) => s + it.qty, 0);
+      }
+
+      function openCart() {
+        cartPanel.classList.add("open");
+        cartPanel.setAttribute("aria-hidden", "false");
+      }
+      function closeCart() {
+        cartPanel.classList.remove("open");
+        cartPanel.setAttribute("aria-hidden", "true");
+      }
+
+      btnCart.addEventListener("click", () => {
+        const open = !cartPanel.classList.contains("open");
+        if (open) openCart();
+        else closeCart();
+      });
+      document.getElementById("btnVaciar").addEventListener("click", () => {
+        saveCart([]);
+      });
+
+      // checkout → guardar pedido en localStorage
+      document
+        .getElementById("checkoutForm")
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          const c = loadCart();
+          if (!c.length) {
+            $("#cartMsg").textContent = "Agrega productos antes de confirmar.";
+            return;
+          }
+          const fd = new FormData(e.target);
+          const order = {
+            id: Date.now(),
+            createdAt: new Date().toISOString(),
+            customer: {
+              nombre: fd.get("nombre"),
+              telefono: fd.get("telefono"),
+              direccion: fd.get("direccion"),
+            },
+            items: c,
+            total: cartSum(c),
+          };
+          const orders = JSON.parse(localStorage.getItem(LS_ORDERS) || "[]");
+          orders.push(order);
+          localStorage.setItem(LS_ORDERS, JSON.stringify(orders));
+          saveCart([]);
+          e.target.reset();
+          $("#cartMsg").textContent = "¡Pedido enviado!";
+          renderOrders();
+        });
+
+      // ===== Render menú =====
+      function currency(q) {
+        return "Q" + q.toFixed(2);
+      }
+      function render(filter = "all") {
+        elGrid.innerHTML = "";
+        const list = DATA.filter((it) =>
+          filter === "all" ? true : it.type === filter
+        );
+        list.forEach((it) => {
+          const card = document.createElement("article");
+          card.className = "item";
+          card.innerHTML = `
+          <div class="thumb"><img src="${it.img}" alt="${it.name}"></div>
+          <div class="info">
+            <h4>${it.name}</h4>
+            <div class="tags">${it.tags
+              .map((t) => `<span class='tag'>${t}</span>`)
+              .join("")}</div>
+            <div class="price-row">
+              <span class="price">${currency(it.price)}</span>
+              <button class="add" aria-label="Agregar ${
+                it.name
+              }">Añadir</button>
+            </div>
+          </div>`;
+          card
+            .querySelector(".add")
+            .addEventListener("click", () => addToCart(it));
+          elGrid.appendChild(card);
+        });
+        elCount.textContent = `${list.length} resultado(s)`;
+      }
+
+      // filtros
+      elChips.forEach((ch) =>
+        ch.addEventListener("click", () => {
+          elChips.forEach((x) => {
+            x.classList.remove("active");
+          });
+          ch.classList.add("active");
+          render(ch.dataset.filter);
+        })
+      );
+      document.querySelectorAll(".card").forEach((c) =>
+        c.addEventListener("click", () => {
+          const btn = document.querySelector(
+            `.chip[data-filter="${c.dataset.filter}"]`
+          );
+          btn && btn.click();
+        })
+      );
+
+      render();
+      updateCartUI();
+
+      // Carrusel simple
+      const slides = [...document.querySelectorAll(".slide")];
+      let si = 0;
+      setInterval(() => {
+        slides[si].classList.remove("active");
+        si = (si + 1) % slides.length;
+        slides[si].classList.add("active");
+      }, 4200);
+
+      // Drawer móvil básico
+      const btnHamb = document.getElementById("btnHamb");
+      const drawer = document.getElementById("drawer");
+      if (btnHamb) {
+        btnHamb.addEventListener("click", () => {
+          const open = drawer.classList.toggle("open");
+          btnHamb.setAttribute("aria-expanded", open);
+          drawer.setAttribute("aria-hidden", !open);
+        });
+      }
+      drawer.querySelectorAll("a").forEach((a) =>
+        a.addEventListener("click", () => {
+          drawer.classList.remove("open");
+        })
+      );
+
+      // ===== Admin: listar pedidos =====
+      const ordersBody = document.getElementById("ordersBody");
+      const ordersInfo = document.getElementById("ordersInfo");
+      function renderOrders() {
+        if (!ordersBody) return;
+        const orders = JSON.parse(localStorage.getItem(LS_ORDERS) || "[]");
+        ordersBody.innerHTML = "";
+        orders.forEach((o, idx) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+      <td style='padding:8px;border-bottom:1px solid #1f1f28'>${idx + 1}</td>
+      <td style='padding:8px;border-bottom:1px solid #1f1f28'>${new Date(
+        o.createdAt
+      ).toLocaleString()}</td>
+      <td style='padding:8px;border-bottom:1px solid #1f1f28'>${
+        o.customer.nombre
+      }</td>
+      <td style='padding:8px;border-bottom:1px solid #1f1f28'>${
+        o.customer.telefono
+      }</td>
+      <td style='padding:8px;border-bottom:1px solid #1f1f28;min-width:200px'>${
+        o.customer.direccion
+      }</td>
+      <td style='padding:8px;border-bottom:1px solid #1f1f28'>${o.items
+        .map((it) => `${it.qty}× ${it.name}`)
+        .join(", ")}</td>
+      <td style='padding:8px;border-bottom:1px solid #1f1f28;text-align:right'>Q${o.total.toFixed(
+        2
+      )}</td>`;
+          ordersBody.appendChild(tr);
+        });
+        const total = orders.reduce((s, o) => s + o.total, 0);
+        ordersInfo.textContent = `${
+          orders.length
+        } pedido(s) • Total vendido Q${total.toFixed(2)}`;
+      }
+
+      document
+        .getElementById("btnClearOrders")
+        .addEventListener("click", () => {
+          if (confirm("¿Borrar todos los pedidos?")) {
+            localStorage.removeItem(LS_ORDERS);
+            renderOrders();
+          }
+        });
+      document.getElementById("btnExport").addEventListener("click", () => {
+        const data = localStorage.getItem(LS_ORDERS) || "[]";
+        const blob = new Blob([data], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "pedidos.json";
+        a.click();
+      });
+
+      function syncAdminVisibility() {
+        const sec = document.getElementById("admin");
+        const show = location.hash === "#admin";
+        sec.style.display = show ? "block" : "none";
+        if (show) renderOrders();
+      }
+      document
+        .getElementById("linkAdmin")
+        .addEventListener("click", () => setTimeout(syncAdminVisibility, 0));
+      window.addEventListener("hashchange", syncAdminVisibility);
+      syncAdminVisibility();
+
+      // Form contacto
+      document.getElementById("contactForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        document.getElementById("formMsg").textContent = `¡Gracias, ${fd.get(
+          "nombre"
+        )}! Te responderemos a ${fd.get("email")}.`;
+        e.target.reset();
+      });
+      document.getElementById("yy").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
